@@ -21,7 +21,7 @@ uv run --frozen python tools/packaged_demo.py
 ```
 It writes into a new temp folder (or `--state DIR` for an empty one) and prints a short transcript of ten steps: the registry; triage of `T-3101` with who it affects and the call-back check; an injection ticket flagged with no lever; the runner refusing the change without approval and without the requester check; a lead approving after a recorded call-back and the change running on the mock tenant; the notice draft for the person; a lever paused, a call denied, resume; the audit chain verified; one changed letter caught in a copy of the log; the injection eval. It exits 0 only if every step passed. It does not run the PowerShell baseline check or the web page; the full five-minute script with those is `docs/DEMO.md`.
 
-With Docker (written but never built or run; the UI is not published to the host because it refuses any address but loopback):
+With Docker, run the same demo in its own container.
 ```bash
 docker compose run --rm demo
 ```
@@ -66,8 +66,8 @@ Diagrams and the one-lever-call sequence: `docs/ARCHITECTURE.md`. Decisions with
 | Workflows (`workflows/*`: triage, summaries, SLA, backup review, alerts, lockout, expiry, fact packs, rollback, reporting and more) | Mock | Read-only or proposal-only over synthetic fixtures; nothing is sent, renewed or changed by software. |
 | Retrieval (`rag`) and MCP server (`mcp`) | Mock | In-memory stores and a stdio server; protocol details UNVERIFIED, never connected to a real client. |
 | Governance pack (`governance/`, `docs/`) | Document-only | Policies, mappings and runbooks, with checkers for their format. Not reviewed by a lawyer, an auditor or an MSP. |
-| Infrastructure (`infra/`) | Document-only | Bicep and pipeline source; never compiled, validated or deployed. |
-| Docker files (`Dockerfile`, `docker-compose.yml`) | Document-only | Written, never built or run (no Docker on the build machine). |
+| Infrastructure (`infra/`) | Checked in CI | CI [compiles and lints the Bicep files](https://github.com/VonBorstel-J/redline-msp-automation/actions/runs/40728783815/job/122959115886). The Azure deployment remains untested. |
+| Docker files (`Dockerfile`, `docker-compose.yml`) | Real | CI [builds the image and runs the packaged demo offline](https://github.com/VonBorstel-J/redline-msp-automation/actions/runs/40728783815/job/122959116084). |
 | Real tenants, tickets, users, PSA or RMM | Not built | None connected. No result here is real-world. |
 
 ## Run the test suites
