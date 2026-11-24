@@ -334,11 +334,11 @@ def page_index(d: dict[str, Any]) -> tuple[str, str, str]:
     body = f"""
 <section class="hero">
 <div class="hero-copy">
-<p class="kicker">Prototype · AI and automation for an MSP</p>
-<h1>Agents are button-pushers.</h1>
-<p class="lede">An AI and automation program for a managed service provider, built as runnable, tested software.
-Deterministic, tested scripts (“levers”) do the work. A model only chooses which lever to press and fills in
-validated parameters. Permissions, approvals and the audit trail live on the lever, not on the model.</p>
+<p class="kicker">Redline · Service desk prototype</p>
+<h1>Who approved this account reset?</h1>
+<p class="lede">Priya is locked out. Her technician can preview an MFA reset, but a lead has to verify the request
+and approve it. Follow the ticket through the service desk, then change a letter in the audit log and see what
+the verifier catches.</p>
 <div class="btn-row"><a class="btn" href="#tour">Follow ticket T-3101, step by step</a>
 <a class="btn secondary" href="triage.html">Triage a ticket yourself</a></div>
 </div>
@@ -796,7 +796,7 @@ does the same: pick where to go.</p>
 
 
 DESCRIPTIONS = {
-    "index": "A governed AI automation prototype for an MSP: agents are button-pushers. Synthetic data, real code.",
+    "index": "Follow a synthetic account reset from the first service ticket to the callback, approval and audit record.",
     "triage": "Run a synthetic ticket through injection scan, wrap, classify, rules and a dry-run lever proposal.",
     "approvals": "Replay the approval queue, then verify and tamper with the hash-chained audit log in your browser.",
     "injection": "How hidden instructions in a ticket are flagged, and why the lever registry is the real control.",

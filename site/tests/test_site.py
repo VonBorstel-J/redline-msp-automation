@@ -698,7 +698,7 @@ class TestRendering(unittest.TestCase):
         cls.server.close()
 
     EXPECT = {
-        "index": ["Agents are button-pushers.", "The 2-minute story"],
+        "index": ["Who approved this account reset?", "The 2-minute story"],
         "portfolio": ["What the work shows", "Proof you can open"],
         "blueprint": ["Ten rules the design will not break", "The path of one change"],
         "roadmap": ["Roadmap and upgrades", "How status is decided", "Deliberately not planned"],
