@@ -1,13 +1,39 @@
-# redline-msp-automation
+# Redline
 
 > Independently built prototype. Not affiliated with any vendor's or real company's systems. All tenants, people and tickets are synthetic.
 
-Redline is a governed AI automation program for a managed service provider (MSP), built as runnable, tested software. The design rule is one sentence: **agents are button-pushers.** Deterministic, tested scripts ("levers") do the work; a model only chooses which lever to press and fills validated parameters. Permissions, approval and audit live on the lever, not on the model.
-
-**At a glance.** Run the packaged demo (one command, below) and the test suites. Proven by tests on synthetic fixtures: lever permissions, approvals, dry-run and pause; a tamper-evident audit log; client scoping; a loopback-only model gateway; a prompt-injection tripwire; a local approval page. Not proven: anything against a real tenant, real tickets or real users. Nothing here has been used in production, and no result in this repo is real-world: every number comes from this repo's fixtures and is labeled fixture-based.
-
 ## What this is
-A prototype of how an MSP service desk and its security and compliance work could be automated without handing a model the keys. One story runs through it: a locked-out person (Priya Nair, synthetic, at Contoso Dental, ticket `T-3101`) is helped by a chain that protects her at every step, from the first triage to the audit record and the notice she receives. Around that story sit about forty read-only or proposal-only workflows, a lever registry, a hash-chained audit log, an approval page, mock adapters for the systems an MSP touches, evals, a governance pack and infrastructure source files. All of it runs offline on the mock model unless a local model is configured.
+
+Priya drops her phone in a lake and loses access to her authenticator app. The technician handling ticket `T-3101` can preview an MFA reset. Before the reset can run, a lead has to record a callback on the number on file and approve the change. Redline records who requested it, who approved it, and what the script did.
+
+**At a glance.** Follow the ticket through [triage](https://vonborstel-j.github.io/redline-msp-automation/triage.html#t=T-3101), then try changing one letter in the [audit record](https://vonborstel-j.github.io/redline-msp-automation/approvals.html). The verifier points to the first broken record. The walkthrough and the Python demo below use synthetic tickets and a mock tenant.
+
+**Not proven.** The project has not used production accounts or made live changes to a client tenant. The demo exercises the approval and audit code against local fixtures.
+
+## Run the packaged demo
+One command, offline, synthetic data, about ten to fifteen seconds. You need [uv](https://docs.astral.sh/uv/) (Python 3.12 comes from uv; Python is run only through uv).
+```bash
+git clone https://github.com/VonBorstel-J/redline-msp-automation
+cd redline-msp-automation
+export UV_PYTHON_PREFERENCE=only-managed      # PowerShell: $env:UV_PYTHON_PREFERENCE = 'only-managed'
+uv sync --frozen
+uv run --frozen python tools/packaged_demo.py
+```
+It writes into a new temp folder (or `--state DIR` for an empty one) and prints a short transcript of ten steps: the registry; triage of `T-3101` with who it affects and the call-back check; an injection ticket flagged with no lever; the runner refusing the change without approval and without the requester check; a lead approving after a recorded call-back and the change running on the mock tenant; the notice draft for the person; a lever paused, a call denied, resume; the audit chain verified; one changed letter caught in a copy of the log; the injection eval. It exits 0 only if every step passed. It does not run the PowerShell baseline check or the web page; the full five-minute script with those is `docs/DEMO.md`.
+
+With Docker, run the same demo in its own container.
+```bash
+docker compose run --rm demo
+```
+
+Try single pieces (state goes to `.tmp/demo`):
+```bash
+uv run --frozen python -m core.levers list
+uv run --frozen python -m core.levers invoke user.reset-mfa --as tech-ana --client contoso-dental -p upn=ana.lopez@contosodental.example   # dry-run: a diff, nothing changed
+uv run --frozen python -m workflows.triage T-3101 --enqueue --state .tmp/demo
+uv run --frozen python -m ui --state .tmp/demo --demo     # approval page on 127.0.0.1 (demo picker, not a sign-in)
+uv run --frozen python -m evals.injection.report
+```
 
 ## Architecture in ten lines (the lever model)
 1. Ticket text, email and documents are **untrusted data**. They are scanned for injection, wrapped as labelled data blocks, and can never change permissions or tool choice (`core/guard`).
@@ -40,34 +66,9 @@ Diagrams and the one-lever-call sequence: `docs/ARCHITECTURE.md`. Decisions with
 | Workflows (`workflows/*`: triage, summaries, SLA, backup review, alerts, lockout, expiry, fact packs, rollback, reporting and more) | Mock | Read-only or proposal-only over synthetic fixtures; nothing is sent, renewed or changed by software. |
 | Retrieval (`rag`) and MCP server (`mcp`) | Mock | In-memory stores and a stdio server; protocol details UNVERIFIED, never connected to a real client. |
 | Governance pack (`governance/`, `docs/`) | Document-only | Policies, mappings and runbooks, with checkers for their format. Not reviewed by a lawyer, an auditor or an MSP. |
-| Infrastructure (`infra/`) | Document-only | Bicep and pipeline source; never compiled, validated or deployed. |
-| Docker files (`Dockerfile`, `docker-compose.yml`) | Document-only | Written, never built or run (no Docker on the build machine). |
+| Infrastructure (`infra/`) | Checked in CI | CI [compiles and lints the Bicep files](https://github.com/VonBorstel-J/redline-msp-automation/actions/runs/40728783815/job/122959115886). The Azure deployment remains untested. |
+| Docker files (`Dockerfile`, `docker-compose.yml`) | Real | CI [builds the image and runs the packaged demo offline](https://github.com/VonBorstel-J/redline-msp-automation/actions/runs/40728783815/job/122959116084). |
 | Real tenants, tickets, users, PSA or RMM | Not built | None connected. No result here is real-world. |
-
-## Run the packaged demo
-One command, offline, synthetic data, about ten to fifteen seconds. You need [uv](https://docs.astral.sh/uv/) (Python 3.12 comes from uv; Python is run only through uv).
-```bash
-git clone https://github.com/VonBorstel-J/redline-msp-automation
-cd redline-msp-automation
-export UV_PYTHON_PREFERENCE=only-managed      # PowerShell: $env:UV_PYTHON_PREFERENCE = 'only-managed'
-uv sync --frozen
-uv run --frozen python tools/packaged_demo.py
-```
-It writes into a new temp folder (or `--state DIR` for an empty one) and prints a short transcript of ten steps: the registry; triage of `T-3101` with who it affects and the call-back check; an injection ticket flagged with no lever; the runner refusing the change without approval and without the requester check; a lead approving after a recorded call-back and the change running on the mock tenant; the notice draft for the person; a lever paused, a call denied, resume; the audit chain verified; one changed letter caught in a copy of the log; the injection eval. It exits 0 only if every step passed. It does not run the PowerShell baseline check or the web page; the full five-minute script with those is `docs/DEMO.md`.
-
-With Docker (written but never built or run; the UI is not published to the host because it refuses any address but loopback):
-```bash
-docker compose run --rm demo
-```
-
-Try single pieces (state goes to `.tmp/demo`):
-```bash
-uv run --frozen python -m core.levers list
-uv run --frozen python -m core.levers invoke user.reset-mfa --as tech-ana --client contoso-dental -p upn=ana.lopez@contosodental.example   # dry-run: a diff, nothing changed
-uv run --frozen python -m workflows.triage T-3101 --enqueue --state .tmp/demo
-uv run --frozen python -m ui --state .tmp/demo --demo     # approval page on 127.0.0.1 (demo picker, not a sign-in)
-uv run --frozen python -m evals.injection.report
-```
 
 ## Run the test suites
 From the repo root (the PowerShell suites need PowerShell 7; see `docs/ENVIRONMENT.md`):
